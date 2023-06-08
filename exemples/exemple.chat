@@ -1,0 +1,7 @@
+module hideo
+
+include "karm-math/vec.h"
+
+Compositor {
+    createWindow(Vec2f size) -> Res<Window>
+}
