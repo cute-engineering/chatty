@@ -377,14 +377,15 @@ def genIncludes(includes: list[str]) -> str:
 
 
 def main() -> int:
-    with open(sys.argv[1], "r") as f:
-        s = Scan(f.read())
-        module = parseModule(s)
-        print(f"#pragma once")
-        print(f"// {sys.argv[1]}")
-        print(genIncludes(module.includes))
-        print(genVirtualIfaces(module.ifaces))
-        print(genClientIfaces(module.ifaces))
-        print(genDispatchFuncs(module.ifaces))
+    with open(sys.argv[1], "r") as inFile:
+        with open(sys.argv[2], "w") as outFile:
+            s = Scan(inFile.read())
+            module = parseModule(s)
+            print(f"#pragma once", file=outFile)
+            print(f"// {sys.argv[1]}", file=outFile)
+            print(genIncludes(module.includes), file=outFile)
+            print(genVirtualIfaces(module.ifaces), file=outFile)
+            print(genClientIfaces(module.ifaces), file=outFile)
+            print(genDispatchFuncs(module.ifaces), file=outFile)
 
     return 0
