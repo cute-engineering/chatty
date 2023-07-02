@@ -14,6 +14,7 @@ setup(
     entry_points={
         "console_scripts": [
             "chatty = chatty:main",
+            "cute-engineering-chatty = chatty:main",
         ],
     },
     license="MIT",
