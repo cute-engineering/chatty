@@ -291,6 +291,7 @@ def genVirtualClass(iface: Iface) -> str:
 struct I{iface.name}
 {{
     static constexpr auto _UID = 0x{iface.id()};
+    static constexpr auto _NAME = "{iface.name}";
 
     template <typename T>
     struct _Client;
