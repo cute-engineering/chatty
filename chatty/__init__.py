@@ -378,6 +378,10 @@ def genIncludes(includes: list[str]) -> str:
 
 
 def main() -> int:
+    if (sys.argv[1] == "--version"):
+        print("0.1.0-dev")
+        return 0
+
     with open(sys.argv[1], "r") as inFile:
         with open(sys.argv[2], "w") as outFile:
             s = Scan(inFile.read())
