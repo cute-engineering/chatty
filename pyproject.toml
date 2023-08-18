@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools ~= 68.0"]
+
+[project]
+name = "chatty"
+description = "The talkative interface definition language"
+authors = [
+    { name = "Sleepy Monax", email = "nivb@cute.engineering" },
+    { name = "Cute Engineering", email = "contact@cute.engineering" },
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+version = "0.0.2"
+
+[project.scripts]
+chatty = "chatty:main"
+cute-engineering-chatty = "chatty:main"
+
+[tool.setuptools]
+packages = ["chatty"]
