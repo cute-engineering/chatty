@@ -38,31 +38,31 @@ class Scan:
 
     def curr(self) -> str:
         if self.eof():
-            return '\0'
+            return "\0"
         return self._src[self._off]
 
     def next(self) -> str:
         if self.eof():
-            return '\0'
+            return "\0"
         self._off += 1
         return self.curr()
 
     def rev(self, off: int = 1) -> str:
         if self._off - off < 0:
-            return '\0'
+            return "\0"
         self._off -= off
         return self.curr()
 
     def peek(self, off: int = 1) -> str:
         if self._off + off >= len(self._src):
-            return '\0'
+            return "\0"
         return self._src[self._off + off]
 
     def eof(self) -> bool:
         return self._off >= len(self._src)
 
     def skipStr(self, s: str) -> bool:
-        if self._src[self._off:].startswith(s):
+        if self._src[self._off :].startswith(s):
             self._off += len(s)
             return True
         return False
@@ -85,7 +85,7 @@ class Scan:
         self._start = self._off
 
     def end(self) -> Tok:
-        return Tok(self._start, self._off, self._src[self._start:self._off])
+        return Tok(self._start, self._off, self._src[self._start : self._off])
 
     def skipWhitespace(self) -> bool:
         result = False
@@ -142,6 +142,7 @@ class Scan:
     def error(self, what: str) -> None:
         raise ScanError(self._off, what)
 
+
 # === AST ==================================================================== #
 
 
@@ -171,6 +172,7 @@ class Module(Node):
     includes: list[str]
     ifaces: dict[str, Iface]
 
+
 # === Parser ================================================================= #
 
 
@@ -184,7 +186,13 @@ def parseIdent(s: Scan) -> Tok:
         s.error("Expected identifier")
         assert False  # unreachable
     s.begin()
-    while s.curr().isalnum() or s.curr() == '_' or s.curr() == ':' or s.curr() == '<' or s.curr() == '>':
+    while (
+        s.curr().isalnum()
+        or s.curr() == "_"
+        or s.curr() == ":"
+        or s.curr() == "<"
+        or s.curr() == ">"
+    ):
         s.next()
     ident = s.end()
     s.skipWhitespace()
@@ -223,7 +231,7 @@ def parseString(s: Scan) -> Tok:
     quotes, raw = parseQuotes(s)
     s.begin()
     while not s.eof() and not s.isStr(quotes):
-        if s.curr() == '\\' and not raw:
+        if s.curr() == "\\" and not raw:
             s.next()
             if s.eof():
                 s.error("Expected escape sequence")
@@ -273,17 +281,22 @@ def parseModule(s: Scan) -> Module:
         module.ifaces[iface.name] = iface
     return module
 
+
 # === C++ Codegen ============================================================ #
 
 
 # --- Header ----------------------------------------------------------------- #
 
+
 def genVirtualFunc(f: Func) -> str:
-    return f"virtual {f.res} {f.name}({', '.join([f'{t} {n}' for t, n in f.args])}) = 0;"
+    return f"""
+    static constexpr auto {f.name}_UID = 0x{f.id()};
+    virtual {f.res} {f.name}({', '.join([f'{t} {n}' for t, n in f.args])}) = 0;
+    """
 
 
 def genVirtualFuncs(iface: Iface) -> str:
-    return '\n'.join([genVirtualFunc(f) for f in iface.funcs.values()])
+    return "\n".join([genVirtualFunc(f) for f in iface.funcs.values()])
 
 
 def genVirtualClass(iface: Iface) -> str:
@@ -306,20 +319,20 @@ struct I{iface.name}
 
 
 def genVirtualIfaces(ifaces: dict[str, Iface]) -> str:
-    return '\n'.join([genVirtualClass(iface) for iface in ifaces.values()])
+    return "\n".join([genVirtualClass(iface) for iface in ifaces.values()])
 
 
 def genClientFunc(iface: Iface, f: Func) -> str:
     return f"""
 {f.res} {f.name}({', '.join([f'{t} {n}' for t, n in f.args])})
 {{
-    return _t.template invoke<I{iface.name}, 0x{f.id()}, {f.res}({', '.join([t for t, _ in f.args])})>({', '.join([n for _, n in f.args])});
+    return _t.template invoke<I{iface.name}, {f.name}_UID, {f.res}({', '.join([t for t, _ in f.args])})>({', '.join([n for _, n in f.args])});
 }}
 """
 
 
 def genClientFuncs(iface: Iface) -> str:
-    return '\n'.join([genClientFunc(iface, f) for f in iface.funcs.values()])
+    return "\n".join([genClientFunc(iface, f) for f in iface.funcs.values()])
 
 
 def genClientClass(iface: Iface) -> str:
@@ -337,12 +350,12 @@ struct I{iface.name}::_Client : public I{iface.name}
 
 
 def genClientIfaces(ifaces: dict[str, Iface]) -> str:
-    return '\n'.join([genClientClass(iface) for iface in ifaces.values()])
+    return "\n".join([genClientClass(iface) for iface in ifaces.values()])
 
 
 def genDispatchCase(iface: Iface, f: Func) -> str:
     return f"""
-case 0x{f.id()}:
+case {f.name}_UID:
 {{
     return r.reply({f.name}({', '.join([f'r.template get<{t}>()' for t, _ in f.args])}));
 }}
@@ -350,7 +363,7 @@ case 0x{f.id()}:
 
 
 def genDispatchCases(iface: Iface) -> str:
-    return '\n'.join([genDispatchCase(iface, f) for f in iface.funcs.values()])
+    return "\n".join([genDispatchCase(iface, f) for f in iface.funcs.values()])
 
 
 def genDispatchFunc(iface: Iface) -> str:
@@ -368,17 +381,18 @@ auto I{iface.name}::_dispatch(R &r)
 
 
 def genDispatchFuncs(ifaces: dict[str, Iface]) -> str:
-    return '\n'.join([genDispatchFunc(iface) for iface in ifaces.values()])
+    return "\n".join([genDispatchFunc(iface) for iface in ifaces.values()])
 
 
 def genIncludes(includes: list[str]) -> str:
-    return '\n'.join([f'#include <{i}>' for i in includes])
+    return "\n".join([f"#include <{i}>" for i in includes])
+
 
 # === Main =================================================================== #
 
 
 def main() -> int:
-    if (sys.argv[1] == "--version"):
+    if sys.argv[1] == "--version":
         print("0.1.0-dev")
         return 0
 
