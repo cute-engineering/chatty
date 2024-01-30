@@ -3,5 +3,5 @@ module hideo
 include "karm-math/vec.h"
 
 Compositor {
-    createWindow(size : Vec2f const&) -> Res<Window>,
+    createWindow(size : Vec2f) -> Res<Window>,
 }

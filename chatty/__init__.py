@@ -369,8 +369,7 @@ struct I{iface.name}
     template <typename T>
     struct _Client;
 
-    template <typename R>
-    auto _dispatch(R &r);
+    auto _dispatch(auto, auto, auto);
 
     virtual ~I{iface.name}() = default;
     {genVirtualFuncs(iface)}
@@ -384,13 +383,13 @@ def genVirtualIfaces(ifaces: dict[str, Iface]) -> str:
 
 def genClientFunc(iface: Iface, f: Func) -> str:
     clientFuncArgs = ", ".join([f"{t} {n}" for t, n in f.args])
-    invokeTmpArgs = ", ".join([t for t, _ in f.args])
+    invokeTmpArgs = ", ".join([f.res] + list([t for t, _ in f.args]))
     invokeFncArgs = ", ".join([n for _, n in f.args])
 
     return f"""
 {f.res} {f.name}({clientFuncArgs})
 {{
-    return _t.template invoke<I{iface.name}, {f.name}_UID, {f.res}({invokeTmpArgs})>({invokeFncArgs});
+    return _t.template invoke<I{iface.name}, {f.name}_UID,  {invokeTmpArgs}>({invokeFncArgs});
 }}
 """
 
@@ -420,7 +419,9 @@ def genClientIfaces(ifaces: dict[str, Iface]) -> str:
 def genDispatchCase(iface: Iface, f: Func) -> str:
     return f"""
 case {f.name}_UID:
-    return r.reply({f.name}({', '.join([f'r.template get<{t}>()' for t, _ in f.args])}));
+    return call<{', '.join([f'{t}()' for t, _ in f.args])}>([&]<typename... Args>(Args &&... args) {{
+        return {f.name}(std::forward<Args>(args)...);
+    }});
 """
 
 
@@ -430,13 +431,12 @@ def genDispatchCases(iface: Iface) -> str:
 
 def genDispatchFunc(iface: Iface) -> str:
     return f"""
-template <typename R>
-auto I{iface.name}::_dispatch(R &r)
+auto I{iface.name}::_dispatch(auto mid, auto call, auto error)
 {{
-    switch (r.id())
+    switch (mid)
     {{
         {genDispatchCases(iface)}
-        default: return r.error();
+        default: return error();
     }}
 }}
 """
