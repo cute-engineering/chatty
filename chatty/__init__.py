@@ -369,7 +369,7 @@ struct I{iface.name}
     template <typename T>
     struct _Client;
 
-    auto _dispatch(auto, auto, auto);
+    auto _dispatch(auto&);
 
     virtual ~I{iface.name}() = default;
     {genVirtualFuncs(iface)}
@@ -419,7 +419,7 @@ def genClientIfaces(ifaces: dict[str, Iface]) -> str:
 def genDispatchCase(iface: Iface, f: Func) -> str:
     return f"""
 case {f.name}_UID:
-    return call<{', '.join([f'{t}()' for t, _ in f.args])}>([&]<typename... Args>(Args &&... args) {{
+    return o.template call<{', '.join([f'{t}' for t, _ in f.args])}>([&]<typename... Args>(Args &&... args) {{
         return {f.name}(std::forward<Args>(args)...);
     }});
 """
@@ -431,12 +431,12 @@ def genDispatchCases(iface: Iface) -> str:
 
 def genDispatchFunc(iface: Iface) -> str:
     return f"""
-auto I{iface.name}::_dispatch(auto mid, auto call, auto error)
+auto I{iface.name}::_dispatch(auto &o)
 {{
-    switch (mid)
+    switch (o.mid)
     {{
         {genDispatchCases(iface)}
-        default: return error();
+        default: return o.error();
     }}
 }}
 """
