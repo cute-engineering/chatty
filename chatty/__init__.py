@@ -433,7 +433,7 @@ def genDispatchFunc(iface: Iface) -> str:
     return f"""
 auto I{iface.name}::_dispatch(auto &o)
 {{
-    switch (o.mid)
+    switch (o.mid())
     {{
         {genDispatchCases(iface)}
         default: return o.error();
