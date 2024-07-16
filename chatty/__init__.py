@@ -359,12 +359,12 @@ def genVirtualFuncs(iface: Iface) -> str:
     return "\n".join([genVirtualFunc(f) for f in iface.funcs.values()])
 
 
-def genVirtualClass(iface: Iface) -> str:
+def genVirtualClass(module: Module, iface: Iface) -> str:
     return f"""
 struct I{iface.name}
 {{
     static constexpr auto _UID = 0x{iface.id()};
-    static constexpr auto _NAME = "{iface.name}";
+    static constexpr auto _NAME = "{module.name}::{iface.name}";
 
     template <typename T>
     struct _Client;
@@ -377,14 +377,14 @@ struct I{iface.name}
 """
 
 
-def genVirtualIfaces(ifaces: dict[str, Iface]) -> str:
-    return "\n".join([genVirtualClass(iface) for iface in ifaces.values()])
+def genVirtualIfaces(module: Module, ifaces: dict[str, Iface]) -> str:
+    return "\n".join([genVirtualClass(module, iface) for iface in ifaces.values()])
 
 
 def genClientFunc(iface: Iface, f: Func) -> str:
     clientFuncArgs = ", ".join([f"{t} {n}" for t, n in f.args])
     invokeTmpArgs = ", ".join([f.res] + list([t for t, _ in f.args]))
-    invokeFncArgs = ", ".join([n for _, n in f.args])
+    invokeFncArgs = ", ".join([f"std::move({n})" for _, n in f.args])
 
     return f"""
 {f.res} {f.name}({clientFuncArgs})
@@ -467,7 +467,7 @@ def main() -> int:
             print("// DO NOT EDIT", file=outFile)
             print(genIncludes(module.includes), file=outFile)
             print(f"namespace {module.name} {{", file=outFile)
-            print(genVirtualIfaces(module.ifaces), file=outFile)
+            print(genVirtualIfaces(module, module.ifaces), file=outFile)
             print(genClientIfaces(module.ifaces), file=outFile)
             print(genDispatchFuncs(module.ifaces), file=outFile)
             print("} // namespace", module.name, file=outFile)
