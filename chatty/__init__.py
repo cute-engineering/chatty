@@ -369,7 +369,7 @@ struct I{iface.name}
     template <typename T>
     struct _Client;
 
-    auto _dispatch(auto&);
+    auto _dispatch(auto);
 
     virtual ~I{iface.name}() = default;
     {genVirtualFuncs(iface)}
@@ -431,7 +431,7 @@ def genDispatchCases(iface: Iface) -> str:
 
 def genDispatchFunc(iface: Iface) -> str:
     return f"""
-auto I{iface.name}::_dispatch(auto &o)
+auto I{iface.name}::_dispatch(auto o)
 {{
     switch (o.mid())
     {{
